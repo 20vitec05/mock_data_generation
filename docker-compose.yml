@@ -1,27 +1,84 @@
 version: "3.9"
 
 services:
-
-  db:
+  postgres:
     image: postgres:16
-    container_name: weather_db
+    container_name: postgres
+    restart: always
     environment:
-      POSTGRES_DB: weather_db
       POSTGRES_USER: weather_user
       POSTGRES_PASSWORD: weather_pass
+      POSTGRES_DB: weather_db
     ports:
       - "5432:5432"
     volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+  redis:
+    image: redis:7
+    container_name: redis
+    restart: always
 
-  logger:
+  redash_init:
+    image: redash/redash:10.1.0.b50633
+    depends_on:
+      - postgres
+      - redis
+    command: create_db
+    environment:
+      REDASH_DATABASE_URL: postgresql://weather_user:weather_pass@postgres:5432/redash_db
+      REDASH_REDIS_URL: redis://redis:6379/0
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET}
+
+  redash_server:
+    image: redash/redash:10.1.0.b50633
+    container_name: redash
+    depends_on:
+      - postgres
+      - redis
+      - redash_init
+    command: server
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      REDASH_DATABASE_URL: postgresql://weather_user:weather_pass@postgres:5432/redash_db
+      REDASH_REDIS_URL: redis://redis:6379/0
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET}
+
+  redash_worker:
+    image: redash/redash:10.1.0.b50633
+    depends_on:
+      - postgres
+      - redis
+      - redash_server
+    command: worker
+    restart: always
+    environment:
+      REDASH_DATABASE_URL: postgresql://weather_user:weather_pass@postgres:5432/redash_db
+      REDASH_REDIS_URL: redis://redis:6379/0
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET}
+
+  redash_scheduler:
+    image: redash/redash:10.1.0.b50633
+    depends_on:
+      - postgres
+      - redis
+      - redash_server
+    command: scheduler
+    restart: always
+    environment:
+      REDASH_DATABASE_URL: postgresql://weather_user:weather_pass@postgres:5432/redash_db
+      REDASH_REDIS_URL: redis://redis:6379/0
+      REDASH_COOKIE_SECRET: ${REDASH_COOKIE_SECRET}
+
+  weather_logger:
     build: ./app
     container_name: weather_logger
+    depends_on:
+      - postgres
+    restart: always
     env_file:
       - .env
-    depends_on:
-      - db
-
 volumes:
   postgres_data:
