@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS measurements (
+    id SERIAL PRIMARY KEY,
+    ts TIMESTAMP NOT NULL,
+    temperature DOUBLE PRECISION,
+    humidity DOUBLE PRECISION,
+    pressure DOUBLE PRECISION,
+    wind_speed DOUBLE PRECISION
+);

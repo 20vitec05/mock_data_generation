@@ -61,3 +61,5 @@ def main():
             log_to_db(cur)
             time.sleep(period)
       
+if __name__ == "__main__":
+    main()
