@@ -4,5 +4,5 @@ docker compose up -d
 для изменения периода записи необходимо поменять переменную в .env
 вот так примерно выглядит настроенный дэшборд в redash
 
-![Таблица](images/screenshot_1)
-![графики](images/screenshot_2)
+![Таблица](images/screenshot_1.png)
+![графики](images/screenshot_2.png)
